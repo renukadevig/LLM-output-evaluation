@@ -93,6 +93,42 @@ cases:
 **Common check keys:** `weight` (score weighting), `required: false` (report but
 don't fail the case).
 
+## Comparing against a source-of-truth API
+
+To check the LLM output against a value a real API returns, fetch the reference
+with `reference_command` (or `context_command`). It runs the command and uses its
+stdout — so a `curl` becomes your ground truth:
+
+```yaml
+cases:
+  # exact match: does the LLM's ETA equal what the orders API says?
+  - name: stated ETA matches the API
+    output_command: "python3 my_llm_call.py 'when does order 5512 arrive?'"
+    reference_command: "curl -s https://api.example.com/orders/5512 | jq -r .eta"
+    checks:
+      - { type: equals }                       # value omitted -> compare to reference
+
+  # field-level: a field inside the LLM's JSON matches the API value
+  - name: extracted eta matches the API
+    output_file: out/answer.json
+    reference_command: "curl -s https://api.example.com/orders/5512 | jq -r .eta"
+    checks:
+      - { type: json_path, path: eta, equals_ref: true }
+```
+
+The reference works with every reference-aware check, so you can pick how strict:
+
+| Comparison | Check |
+|---|---|
+| Exact string == API value | `equals` (omit `value`) |
+| A JSON field == API value | `json_path` + `equals_ref: true` |
+| Wording close to API value | `similarity` |
+| **Meaning** close to API value | `semantic_similarity` |
+| LLM answer consistent with API data (judged) | `judge` with `context_command` |
+
+Runnable offline demo (uses a local `fake_api.py` in place of `curl`):
+`python3 -m llmval run examples/api_comparison_suite.json --no-judge`
+
 ## Semantic similarity (embeddings)
 
 `similarity` is lexical (shared tokens). `semantic_similarity` compares *meaning*

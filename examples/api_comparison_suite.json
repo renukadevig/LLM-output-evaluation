@@ -1,0 +1,40 @@
+{
+  "name": "compare LLM output against a source-of-truth API",
+  "_note": "reference_command fetches the 'true' value from an API (here a local fake_api.py; in real use, a curl). Run: python3 -m llmval run examples/api_comparison_suite.json --no-judge",
+  "judge": { "backend": "none" },
+  "cases": [
+    {
+      "name": "PASS · LLM's stated ETA exactly matches the API",
+      "output": "2026-07-20",
+      "reference_command": "python3 fake_api.py 5512 eta",
+      "checks": [
+        { "type": "equals" }
+      ]
+    },
+    {
+      "name": "FAIL · LLM hallucinated a different ETA than the API returns",
+      "output": "2026-07-25",
+      "reference_command": "python3 fake_api.py 5512 eta",
+      "checks": [
+        { "type": "equals" }
+      ]
+    },
+    {
+      "name": "PASS · a field inside the LLM's JSON matches the API value",
+      "output": "{\"order\": \"5512\", \"eta\": \"2026-07-20\", \"note\": \"on the way\"}",
+      "reference_command": "python3 fake_api.py 5512 eta",
+      "checks": [
+        { "type": "json_valid" },
+        { "type": "json_path", "path": "eta", "equals_ref": true }
+      ]
+    },
+    {
+      "name": "PASS · LLM's prose answer is semantically consistent with the API status",
+      "output": "Good news — your order is on its way and should arrive on July 20th.",
+      "reference_command": "python3 fake_api.py 5512 status",
+      "checks": [
+        { "type": "keyword_recall", "keywords": ["arrive"], "min_ratio": 1.0 }
+      ]
+    }
+  ]
+}

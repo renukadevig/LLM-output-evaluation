@@ -81,6 +81,30 @@ class TestStructured(unittest.TestCase):
         self.assertEqual(r.status, "fail")
 
 
+class TestApiComparison(unittest.TestCase):
+    def test_equals_uses_reference_when_no_value(self):
+        r = dispatch({"type": "equals"}, ctx("2026-07-20", reference="2026-07-20\n"))
+        self.assertEqual(r.status, "pass")
+
+    def test_equals_reference_mismatch(self):
+        r = dispatch({"type": "equals"}, ctx("2026-07-25", reference="2026-07-20"))
+        self.assertEqual(r.status, "fail")
+
+    def test_equals_errors_without_value_or_reference(self):
+        r = dispatch({"type": "equals"}, ctx("x"))
+        self.assertEqual(r.status, "error")
+
+    def test_json_path_equals_ref(self):
+        r = dispatch({"type": "json_path", "path": "eta", "equals_ref": True},
+                     ctx('{"eta": "2026-07-20"}', reference="2026-07-20"))
+        self.assertEqual(r.status, "pass")
+
+    def test_resolve_source_command(self):
+        from llmval.runner import _resolve_source
+        val = _resolve_source({"reference_command": "printf hello"}, "reference", ".")
+        self.assertEqual(val, "hello")
+
+
 class TestSimilarity(unittest.TestCase):
     def test_cosine_high(self):
         r = dispatch({"type": "similarity", "method": "cosine", "min_score": 0.3},

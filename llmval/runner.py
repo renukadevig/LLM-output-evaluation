@@ -31,26 +31,37 @@ def _run_command(command: Any, base_dir: str, timeout: int, shell: bool) -> str:
     return proc.stdout
 
 
-def _resolve_output(case: dict, base_dir: str) -> str:
-    if "output" in case:
-        return str(case["output"])
-    if "output_file" in case:
-        return _read_file(base_dir, case["output_file"])
-    if "command" in case:
-        return _run_command(
-            case["command"], base_dir,
-            timeout=int(case.get("timeout", 120)),
-            shell=bool(case.get("shell", False)),
-        )
-    raise ValueError("case has no output source (need one of: output, output_file, command)")
-
-
-def _resolve_text(case: dict, key: str, base_dir: str) -> str:
+def _resolve_source(case: dict, key: str, base_dir: str, cmd_key: str | None = None):
+    """Resolve one text input from `<key>` (inline), `<key>_file`, or
+    `<key>_command` (runs it, uses stdout). The command form is what lets a
+    reference/context be fetched from a live API, e.g.
+        reference_command: "curl -s https://api/orders/5512 | jq -r .eta"
+    Returns None if no source is given for this key."""
     if key in case:
         return str(case[key])
     if f"{key}_file" in case:
         return _read_file(base_dir, case[f"{key}_file"])
-    return ""
+    # accept both the explicit cmd_key (e.g. "command" for output) and "<key>_command"
+    for ck in ([cmd_key] if cmd_key else []) + [f"{key}_command"]:
+        if ck in case:
+            return _run_command(
+                case[ck], base_dir,
+                timeout=int(case.get("timeout", 120)),
+                shell=bool(case.get("shell", False)),
+            )
+    return None
+
+
+def _resolve_output(case: dict, base_dir: str) -> str:
+    v = _resolve_source(case, "output", base_dir, cmd_key="command")
+    if v is None:
+        raise ValueError("case has no output source (need one of: output, output_file, command)")
+    return v
+
+
+def _resolve_text(case: dict, key: str, base_dir: str) -> str:
+    v = _resolve_source(case, key, base_dir)
+    return v if v is not None else ""
 
 
 def run_case(case: dict, suite: Suite) -> CaseResult:

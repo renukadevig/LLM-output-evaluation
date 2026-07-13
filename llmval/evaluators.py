@@ -113,7 +113,17 @@ def _regex(check, ctx):
 
 @evaluator("equals")
 def _equals(check, ctx):
-    a, b = ctx.output.strip(), str(check["value"]).strip()
+    # `value` is a literal; omit it to compare against the reference (which may be
+    # fetched from an API via reference_command) — i.e. "output == API's value".
+    if "value" in check:
+        b = str(check["value"])
+    elif ctx.reference:
+        b = ctx.reference
+    else:
+        return CheckResult(type="equals", status="error", score=0.0,
+                           required=bool(check.get("required", True)),
+                           reason="equals needs 'value' or a reference to compare against")
+    a, b = ctx.output.strip(), b.strip()
     if check.get("case_insensitive", False):
         a, b = a.lower(), b.lower()
     return _res(check, a == b, "exact match" if a == b else f"expected {b!r}, got {a!r}")
@@ -174,6 +184,12 @@ def _json_path(check, ctx):
     if "equals" in check:
         return _res(check, val == check["equals"],
                     f"{check['path']}={val!r} (wanted {check['equals']!r})")
+    if check.get("equals_ref"):
+        # compare the extracted field against the reference (e.g. an API value)
+        want = ctx.reference.strip()
+        got = str(val).strip()
+        return _res(check, got == want,
+                    f"{check['path']}={got!r} vs reference {want!r}")
     if "type" in check:
         py = jsonschema_mini._TYPES.get(check["type"])
         ok = isinstance(val, py) and not (check["type"] in ("integer", "number") and isinstance(val, bool))
