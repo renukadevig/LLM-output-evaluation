@@ -1,0 +1,60 @@
+{
+  "name": "example suite (offline, no judge needed)",
+  "judge": { "backend": "cli", "cli_path": "claude" },
+  "cases": [
+    {
+      "name": "greeting is polite and mentions help",
+      "output": "Hello! How can I help you today?",
+      "checks": [
+        { "type": "contains", "value": "help" },
+        { "type": "no_refusal" },
+        { "type": "max_length", "value": 200 }
+      ]
+    },
+    {
+      "name": "structured extraction matches schema",
+      "output": "```json\n{\"name\": \"John\", \"age\": 30, \"email\": \"john@acme.io\"}\n```",
+      "checks": [
+        { "type": "json_valid" },
+        {
+          "type": "json_schema",
+          "schema": {
+            "type": "object",
+            "required": ["name", "age"],
+            "properties": {
+              "name": { "type": "string" },
+              "age": { "type": "integer", "minimum": 0 },
+              "email": { "type": "string" }
+            }
+          }
+        },
+        { "type": "json_path", "path": "age", "equals": 30 }
+      ]
+    },
+    {
+      "name": "classification label is one of the allowed set",
+      "output": "positive",
+      "checks": [
+        { "type": "one_of", "value": ["positive", "negative", "neutral"], "case_insensitive": true }
+      ]
+    },
+    {
+      "name": "summary is lexically close to the golden answer",
+      "output": "The refund service processes returns within five business days.",
+      "reference": "Refunds are handled by the refund service and complete in about 5 business days.",
+      "checks": [
+        { "type": "similarity", "method": "cosine", "min_score": 0.4 },
+        { "type": "keyword_recall", "keywords": ["refund", "business days"], "min_ratio": 1.0 }
+      ]
+    },
+    {
+      "name": "answer must not leak PII (judge only runs if enabled)",
+      "output": "Your order has shipped and will arrive Tuesday.",
+      "context": "Order 5512 shipped via courier, ETA Tuesday.",
+      "checks": [
+        { "type": "no_pii" },
+        { "type": "judge", "rubric": "faithfulness", "min_score": 4 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+# Same suite in YAML (needs `pip install pyyaml`). Shows all three output sources
+# and both structured + unstructured checks in one file.
+name: example suite (yaml)
+
+judge:
+  backend: cli        # cli | none  (override at runtime with --no-judge)
+  cli_path: claude
+
+defaults:
+  # merged into every check; per-check keys win
+  case_insensitive: true
+
+cases:
+  # 1. UNSTRUCTURED — inline output, deterministic + judge
+  - name: greeting is polite
+    output: "Hello! How can I help you today?"
+    prompt: "Greet the user."
+    checks:
+      - type: contains
+        value: help
+      - type: no_refusal
+      - type: judge
+        rubric: tone           # named rubric; or write free text here
+        min_score: 4
+
+  # 2. STRUCTURED — output produced by running a command in your project
+  - name: extractor returns valid schema
+    command: "python3 examples/demo_extractor.py 'John is 30, email john@acme.io'"
+    checks:
+      - type: json_valid
+      - type: json_schema
+        schema:
+          type: object
+          required: [name, age]
+          properties:
+            name: { type: string }
+            age: { type: integer, minimum: 0 }
+      - type: json_path
+        path: name
+        equals: John
+
+  # 3. RAG faithfulness — output + context both read from files
+  - name: summary stays faithful to the source
+    output_file: fixtures/summary.txt
+    context_file: fixtures/source.txt
+    checks:
+      - type: max_length
+        value: 80
+        unit: words
+      - type: judge
+        rubric: faithfulness
+        min_score: 4

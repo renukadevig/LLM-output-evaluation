@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmval"
+version = "0.1.0"
+description = "Portable framework to validate structured & unstructured LLM output (deterministic checks, similarity, LLM-as-judge)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Renuka Gopalakrishnan" }]
+keywords = ["llm", "evaluation", "testing", "qa", "llm-as-judge", "validation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = []  # stdlib-only core
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=5.1"]
+embeddings = ["sentence-transformers>=2.2"]   # local, offline semantic similarity
+openai = ["openai>=1.0"]                       # OpenAI embeddings backend
+dev = ["pyyaml>=5.1"]
+
+[project.scripts]
+llmval = "llmval.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/renukadevig/LLM-output-evaluation"
+Repository = "https://github.com/renukadevig/LLM-output-evaluation"
+
+[tool.setuptools]
+packages = ["llmval"]
