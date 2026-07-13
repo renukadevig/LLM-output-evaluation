@@ -1,0 +1,70 @@
+{
+  "name": "sample data — mixed pass & fail (offline demo)",
+  "_note": "Run: python3 -m llmval run examples/sample_suite_with_failures.json --no-judge  — some cases FAIL on purpose so you can see the report.",
+  "judge": { "backend": "none" },
+  "cases": [
+    {
+      "name": "PASS · valid extraction schema",
+      "output": "{\"intent\": \"book_flight\", \"origin\": \"DXB\", \"destination\": \"CAI\"}",
+      "checks": [
+        { "type": "json_valid" },
+        {
+          "type": "json_schema",
+          "schema": {
+            "type": "object",
+            "required": ["intent", "origin", "destination"],
+            "properties": {
+              "intent": { "type": "string" },
+              "origin": { "type": "string", "minLength": 3, "maxLength": 3 },
+              "destination": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FAIL · age should be integer but model returned a string",
+      "output": "{\"name\": \"Sara\", \"age\": \"thirty\"}",
+      "checks": [
+        { "type": "json_schema", "schema": { "type": "object", "properties": { "age": { "type": "integer" } } } }
+      ]
+    },
+    {
+      "name": "PASS · classification label in allowed set",
+      "output": "neutral",
+      "checks": [
+        { "type": "one_of", "value": ["positive", "negative", "neutral"] }
+      ]
+    },
+    {
+      "name": "FAIL · model hallucinated a label outside the allowed set",
+      "output": "mixed",
+      "checks": [
+        { "type": "one_of", "value": ["positive", "negative", "neutral"] }
+      ]
+    },
+    {
+      "name": "FAIL · answer leaks PII (email + phone)",
+      "output": "Sure, contact the agent at sara@example.com or +971 50 123 4567.",
+      "checks": [
+        { "type": "no_pii" }
+      ]
+    },
+    {
+      "name": "FAIL · model refused instead of answering",
+      "output": "I'm sorry, I can't help with that request.",
+      "checks": [
+        { "type": "no_refusal" }
+      ]
+    },
+    {
+      "name": "PASS · paraphrase is lexically close enough to golden",
+      "output": "Refunds are returned to your original card within five business days.",
+      "reference": "Refunds go back to the original payment method in about 5 business days.",
+      "checks": [
+        { "type": "similarity", "method": "cosine", "min_score": 0.35 },
+        { "type": "keyword_recall", "keywords": ["refund", "business days"], "min_ratio": 1.0 }
+      ]
+    }
+  ]
+}

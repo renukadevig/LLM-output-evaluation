@@ -1,0 +1,5 @@
+Almosafer processes flight refunds through its automated refund service. Once a
+cancellation is approved, the refund is issued to the original payment method and
+typically completes within five business days. Refund requests for promotional or
+non-refundable fares may be declined. Customers can track the status of a refund
+from the "My Trips" section of the app.

@@ -43,6 +43,21 @@ Three layers, cheapest first — a `skip` (e.g. judge disabled) never fails a ca
 | Semantic similarity | `semantic_similarity` (real embeddings) | model/API |
 | LLM-as-judge | `judge` (rubric: `faithfulness` `relevance` `correctness` `coherence` `tone` `conciseness` `safety`, or free text) | CLI call |
 
+## Sample data
+
+Runnable out of the box in `examples/` — try these first:
+
+```bash
+python3 -m llmval run examples/example_suite.json          --no-judge   # 5 cases, all pass
+python3 -m llmval run examples/example_suite.yaml          --no-judge   # inline + file + command sources
+python3 -m llmval run examples/sample_suite_with_failures.json --no-judge # mixed pass/fail — see a real report
+```
+
+- `example_suite.json` / `.yaml` — one suite showing every output source (inline, `output_file`, `command`) and both structured & unstructured checks.
+- `sample_suite_with_failures.json` — a small labeled dataset where several cases fail on purpose (bad schema type, out-of-set label, PII leak, refusal) so you can see how failures render.
+- `fixtures/` — sample source + summary text used by the RAG/faithfulness case.
+- `demo_extractor.py` — a stand-in "LLM call" for the `command:` example; replace with your real model call.
+
 ## Suite format
 
 YAML (needs `pip install pyyaml`) or JSON. Each case needs one **output source**

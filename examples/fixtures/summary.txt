@@ -1,0 +1,3 @@
+Approved flight refunds are returned to the original payment method and usually
+complete within five business days. Non-refundable or promotional fares may be
+declined, and customers can check refund status under "My Trips".

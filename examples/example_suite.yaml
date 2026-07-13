@@ -25,7 +25,9 @@ cases:
 
   # 2. STRUCTURED — output produced by running a command in your project
   - name: extractor returns valid schema
-    command: "python3 examples/demo_extractor.py 'John is 30, email john@acme.io'"
+    # commands run with the working directory set to this suite's folder,
+    # so the path is relative to examples/ (not the repo root).
+    command: "python3 demo_extractor.py 'John is 30, email john@acme.io'"
     checks:
       - type: json_valid
       - type: json_schema
